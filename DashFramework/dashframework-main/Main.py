@@ -19,6 +19,9 @@ from DC2_app.data import get_subselection
 from DC2_app.Models import get_ARIMA
 from DC2_app.Models import get_RNN
 from DC2_app.Models import get_Mape
+from DC2_app.data import get_amount_of_crime_options_region_year_type_xaxis_month
+from DC2_app.data import get_amount_of_crime_options_year_type_xaxis_region
+from DC2_app.data import get_amount_of_crime_options_in_year_region_xaxis_CrimType
 
 
 # Since we're adding callbacks to elements that don't exist in the app.layout,
@@ -156,7 +159,7 @@ app.layout = html.Div(
     State('Crime_Type_filter', 'value'),
     State('Year_filter', 'value')
 )
-def update_charts(n_clicks, Region, Type):
+def update_charts(n_clicks, Region, Type, Year):
     if Region != "" and Type != "":
         df_amount = get_amount_data(Type, Region)
         train, test, predicted = get_ARIMA(df_amount)
@@ -186,17 +189,30 @@ def update_charts(n_clicks, Region, Type):
                "MAPE: " + str(get_Mape(test, predicted)),\
                "MAPE: " + str(get_Mape(test_RNN, predicted_RNN))
 
-    if  Region != "" and Type != "" and Year_distinct != "":
-        fig2 = go.Figure()
-        fig2.update_layout(title="Amount of crime per Month")
-        # fig2.add_trace(go.Bar(x=))
+    if  Region != "" and Year != "" and Type != "":
+        fig2 = px.bar(get_amount_of_crime_options_region_year_type_xaxis_month(Region, Year, Type), x='Month', y='COUNT(`Crime type`)',
+                labels={
+                        "COUNT(`Crime type`)": "Amount of crime",
+                        "Month": "Month",
+                        },
+                title=f"{Region}, {Year}, {Type}")
+ 
+        fig3 = px.bar(get_amount_of_crime_options_in_year_region_xaxis_CrimType(Region, Year), x='Crime type', y='COUNT(`Crime type`)',
+            labels={
+                     "COUNT(`Crime type`)": "Amount of crime",
+                     "Crime type": "Crime type",
+                     },
+            title=f"{Region}, {Year}")
+
+        fig4 = px.bar(get_amount_of_crime_options_year_type_xaxis_region(Year, Type), x='Falls within', y='COUNT(`Crime type`)',
+            labels={
+                    "COUNT(`Crime type`)": "Amount of crime",
+                    "Falls within": "Region",
+                    },
+            title=f"{Year}, {Type}")        
 
 
-
-
-
-
-        return dcc.Graph(figure=fig2)
+        return fig2.show(), fig3.show(), fig4.show()
 
         
 
