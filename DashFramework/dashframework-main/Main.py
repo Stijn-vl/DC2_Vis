@@ -20,12 +20,16 @@ from DC2_app.Models import get_ARIMA
 from DC2_app.Models import get_RNN
 from DC2_app.Models import get_Mape
 
+
 # Since we're adding callbacks to elements that don't exist in the app.layout,
 # # Dash will raise an exception to warn us that we might be
 # # doing something wrong.
 # # In this case, we're adding the elements through a callback, so we can ignore
 # # the exception.
 con = sqlite3.connect('DC2_DB.db')
+
+
+
 
 query_regions = f'''SELECT * FROM Regions'''
 sql_query = pd.read_sql_query(query_regions, con)
@@ -34,6 +38,10 @@ Regions = pd.DataFrame(sql_query)
 query_types = f'''SELECT * FROM Crime_Type'''
 sql_query = pd.read_sql_query(query_types, con)
 Types = pd.DataFrame(sql_query)
+
+query_regions = f'''SELECT * FROM Years'''
+sql_query = pd.read_sql_query(query_regions, con)
+Year_distinct = pd.DataFrame(sql_query)
 
 app = dash.Dash(__name__, suppress_callback_exceptions=True, external_stylesheets=[dbc.themes.BOOTSTRAP])
 
@@ -89,6 +97,22 @@ app.layout = html.Div(
                         ),
                     ],
                 ),
+                html.Div(
+                    children=[
+                        html.Div(children="Years",
+                                 style={"margin-bottom": "6px", "font-weight": "bold", "color": "#079A82"}),
+                        dcc.Dropdown(id="Year_filter", style={"height": "48px", "width": "290px"},
+                                     options=[
+                                         {"label": Year_distinct, "value": Year_distinct}
+                                         for Year_distinct in np.sort(list(Year_distinct['Years']))
+                                     ],
+                                     value=[""],
+                                     clearable=False,
+                                     multi=False,
+                                     className="dropdown",
+                                     ),
+                    ],
+                ),
                 html.Div([
                             html.Button('Load', id='Trigger', n_clicks=0)
                     ],
@@ -107,6 +131,11 @@ app.layout = html.Div(
                     html.Div(id='ModelVisRNN', style={'display': 'inline-block', 'vertical-align': 'top', 'width': '90%', }),
                     html.Div(id='MAPE_RNN', style={'display': 'inline-block', 'vertical-align': 'top', 'width': '10%', })
                 ], style={"margin": "10px auto 0 auto"}),
+                html.Div(id="Combined-container3", children=[
+                    html.Div(id='Amount_Month', style={'display': 'inline-block', 'vertical-align': 'top', 'width': '90%', }),
+                    html.Div(id='Amount_Region', style={'display': 'inline-block', 'vertical-align': 'top', 'width': '10%', }),
+                    html.Div(id='Amount_Type', style={'display': 'inline-block', 'vertical-align': 'top', 'width': '10%', })
+                ], style={"margin": "10px auto 0 auto"}),
             ],
         ),
     ], )
@@ -117,10 +146,15 @@ app.layout = html.Div(
     Output("ModelVisRNN", "children"),
     Output("MAPE_ARIMA", "children"),
     Output("MAPE_RNN", "children"),
+    Output("Amount_Month", "children"),
+    Output("Amount_Region", "children"),
+    Output("Amount_Type", "children"),
+
 
     Input('Trigger', 'n_clicks'),
     State('Region_filter', 'value'),
     State('Crime_Type_filter', 'value'),
+    State('Year_filter', 'value')
 )
 def update_charts(n_clicks, Region, Type):
     if Region != "" and Type != "":
@@ -151,6 +185,22 @@ def update_charts(n_clicks, Region, Type):
         return dcc.Graph(figure=fig), dcc.Graph(figure=fig1),\
                "MAPE: " + str(get_Mape(test, predicted)),\
                "MAPE: " + str(get_Mape(test_RNN, predicted_RNN))
+
+    if  Region != "" and Type != "" and Year_distinct != "":
+        fig2 = go.Figure()
+        fig2.update_layout(title="Amount of crime per Month")
+        # fig2.add_trace(go.Bar(x=))
+
+
+
+
+
+
+        return dcc.Graph(figure=fig2)
+
+        
+
+
 
 if __name__ == '__main__':
     app.run_server(debug=True)
