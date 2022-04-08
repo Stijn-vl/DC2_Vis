@@ -12,19 +12,18 @@ import pmdarima as pm
 import sqlite3
 
 def get_ARIMA(Data):
-    Data['Day'] = 1
-    Data['Date'] = pd.to_datetime(Data[['Year', 'Month', 'Day']])
-    train = Data.loc[Data['Year'] <= 2018,]
-    test = Data.loc[Data['Year'] == 2019,]
+    Data['Month'] = Data.Month.astype(str).str.pad(2,fillchar='0')
+    Data['Year'] = Data['Year'].astype(str)
+    Data['Date'] = pd.to_datetime(Data['Year'] + Data['Month'], format='%Y%m')
+    train = Data.loc[Data['Date'] < pd.to_datetime(2019, format='%Y'),]
+    test = Data.loc[Data['Date'] >= pd.to_datetime(2019, format='%Y'),]
 
     del train['Falls within']
     del train['Year']
-    del train['Month']
-    del train['Day']
+    del train ['Month']
     del test['Falls within']
     del test['Year']
-    del test['Month']
-    del test['Day']
+    del test ['Month']
 
     train = train.set_index(['Date'])
     test = test.set_index(['Date'])
@@ -60,19 +59,18 @@ def get_RNN(Data):
             inout_seq.append((train_seq, train_label))
         return inout_seq
 
-    Data['Day'] = 1
-    Data['Date'] = pd.to_datetime(Data[['Year', 'Month', 'Day']])
-    train = Data.loc[Data['Year'] <= 2018,]
-    test = Data.loc[Data['Year'] == 2019,]
+    Data['Month'] = Data.Month.astype(str).str.pad(2,fillchar='0')
+    Data['Year'] = Data['Year'].astype(str)
+    Data['Date'] = pd.to_datetime(Data['Year'] + Data['Month'], format='%Y%m')
+    train = Data.loc[Data['Date'] < pd.to_datetime(2019, format='%Y'),]
+    test = Data.loc[Data['Date'] >= pd.to_datetime(2019, format='%Y'),]
 
     del train['Falls within']
     del train['Year']
-    del train['Month']
-    del train['Day']
+    del train ['Month']
     del test['Falls within']
     del test['Year']
-    del test['Month']
-    del test['Day']
+    del test ['Month']
 
     train = train.set_index(['Date'])
     test = test.set_index(['Date'])
@@ -107,7 +105,7 @@ def get_RNN(Data):
     optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
     print(model)
 
-    epochs = 150
+    epochs = 200
 
     for i in range(epochs):
         for seq, labels in train_inout_seq:
@@ -120,10 +118,8 @@ def get_RNN(Data):
             single_loss = loss_function(y_pred, labels)
             single_loss.backward()
             optimizer.step()
-
-        if i % 25 == 1:
+        if i % 50 == 1:
             print(f'epoch: {i:3} loss: {single_loss.item():10.8f}')
-
     fut_pred = len(test)
     test_inputs = train_data_normalized[-train_window:].tolist()
 
